@@ -82,6 +82,37 @@ require plugin_dir_path(__FILE__) . 'includes/class-csp-guest-addon.php';
  *
  * @since    1.0.0
  */
+
+// Add guest role during plugin activation
+register_activation_hook(__FILE__, 'add_guest_role');
+
+function add_guest_role()
+{
+	$guest_role = get_role('guest');
+
+	if (!$guest_role) {
+		$capabilities = array(
+			'read'         => true,
+			'level_0'      => true,
+			'guest_access' => true, // Custom capability for guest access
+		);
+
+		add_role('guest', 'Guest', $capabilities);
+	}
+}
+
+// Remove guest role during plugin deactivation
+register_deactivation_hook(__FILE__, 'remove_guest_role');
+
+function remove_guest_role()
+{
+	$guest_role = get_role('guest');
+
+	if ($guest_role) {
+		remove_role('guest');
+	}
+}
+
 function run_csp_guest_addon()
 {
 
