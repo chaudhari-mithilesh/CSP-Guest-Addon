@@ -54,7 +54,7 @@ class Csp_Guest_Addon_Public
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
 
-		include_once plugin_dir_path(__FILE__) . 'admin/class-csp-guest-addon-admin.php';
+		include_once plugin_dir_path(__FILE__) . '/../admin/class-csp-guest-addon-admin.php';
 	}
 
 	/**
