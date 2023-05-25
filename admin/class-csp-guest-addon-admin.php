@@ -222,12 +222,12 @@ class Csp_Guest_Addon_Admin
 			if ($key !== false) {
 				$price = $price_data[$key]['price'];
 				$min_qty = $price_data[$key]['min_qty'];
-				if (is_product() && $product->is_type('simple')) {
-					// 	$product_html = $this->get_product_qty_html($product_id, $price, $min_qty);
-					// 	// echo $product_html;
-					$price_html = '<span class="price">' . wc_price($price)  . '</span>';
-					return $price_html;
-				}
+				// if (is_product() && $product->is_type('simple')) {
+				// 	$product_html = $this->get_product_qty_html($product_id, $price, $min_qty);
+				// 	// echo $product_html;
+				$price_html = '<span class="price">' . wc_price($price)  . '</span>';
+				// return $price_html;
+				// }
 				// $price_html = '<span class="price">' . wc_price($price)  . '</span>';
 			}
 
@@ -251,8 +251,9 @@ class Csp_Guest_Addon_Admin
 			// Get the product ID
 			$product_id = $product->get_id();
 			$price = $this->calculate_price_qty($product_id, 1);
+			$price = number_format($price, 2);
 			// $price = number_format($price, 2);
-			$price_html .= "<br>";
+			$price_html = "<br>";
 			$price_html .= '<div class = "dynamic-price-text"><span>Product Total: <span>';
 			$price_html .= '<span>' . get_woocommerce_currency_symbol() . '<span>';
 			$price_html .= '<span class = "dynamic-price">' . $price .  '</span>';
@@ -323,13 +324,17 @@ class Csp_Guest_Addon_Admin
 				return $a['min_qty'] <=> $b['min_qty'];
 			});
 
-
+			if (count($product_data) == 1 && end($product_data)['min_qty'] == 1) {
+				return $description;
+			}
 			$table = '<div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
 			$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
 			$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($regular_price) . '</td></tr>';
 
 			foreach ($product_data as $data) {
-				$table .= '<tr><td class = "qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($data['product_id'], $data['min_qty'])) . '</td></tr>';
+				if (!($data['min_qty'] == 1)) {
+					$table .= '<tr><td class = "qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($data['product_id'], $data['min_qty'])) . '</td></tr>';
+				}
 			}
 
 
