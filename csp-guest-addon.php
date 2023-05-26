@@ -50,7 +50,7 @@ function activate_csp_guest_addon()
 	} else {
 		// Deactivate the plugin if WooCommerce and/or the CSP plugin is not active
 		deactivate_plugins(plugin_basename(__FILE__));
-		wp_die('Sorry, but this plugin requires WooCommerce and the CSP Guest Add-on to be installed and active.');
+		wp_die('Sorry, but this plugin requires WooCommerce and the Customer Specific Pricing for Woocommerce to be installed and active.');
 	}
 }
 
@@ -84,34 +84,34 @@ require plugin_dir_path(__FILE__) . 'includes/class-csp-guest-addon.php';
  */
 
 // Add guest role during plugin activation
-register_activation_hook(__FILE__, 'add_guest_role');
+// register_activation_hook(__FILE__, 'add_guest_role');
 
-function add_guest_role()
-{
-	$guest_role = get_role('guest');
+// function add_guest_role()
+// {
+// 	$guest_role = get_role('guest');
 
-	if (!$guest_role) {
-		$capabilities = array(
-			'read'         => true,
-			'level_0'      => true,
-			'guest_access' => true, // Custom capability for guest access
-		);
+// 	if (!$guest_role) {
+// 		$capabilities = array(
+// 			'read'         => true,
+// 			'level_0'      => true,
+// 			'guest_access' => true, // Custom capability for guest access
+// 		);
 
-		add_role('guest', 'Guest', $capabilities);
-	}
-}
+// 		add_role('guest', 'Guest', $capabilities);
+// 	}
+// }
 
-// Remove guest role during plugin deactivation
-register_deactivation_hook(__FILE__, 'remove_guest_role');
+// // Remove guest role during plugin deactivation
+// register_deactivation_hook(__FILE__, 'remove_guest_role');
 
-function remove_guest_role()
-{
-	$guest_role = get_role('guest');
+// function remove_guest_role()
+// {
+// 	$guest_role = get_role('guest');
 
-	if ($guest_role) {
-		remove_role('guest');
-	}
-}
+// 	if ($guest_role) {
+// 		remove_role('guest');
+// 	}
+// }
 
 function run_csp_guest_addon()
 {

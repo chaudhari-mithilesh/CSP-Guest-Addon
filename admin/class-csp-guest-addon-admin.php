@@ -122,7 +122,7 @@ class Csp_Guest_Addon_Admin
 			'CSP Guest Addon',
 			'manage_options',
 			'guest-addon-menu',
-			array($this, 'get_category_rules'),
+			array($this, 'guest_settings'),
 			'dashicons-buddicons-buddypress-logo',
 			50
 		);
@@ -133,9 +133,42 @@ class Csp_Guest_Addon_Admin
 			'Calculate Prices',
 			'manage_options',
 			'csp-guest-prices',
-			array($this, 'get_category_price_data'),
+			array($this, 'fetch_active_guest_rules'),
 		);
 	}
+
+	public function guest_settings()
+	{
+
+		echo '<center><h1>' . get_admin_page_title() . '</h1></center>';
+		$roles = wp_roles()->roles;
+
+		echo '<form method="post">';
+		echo '<label for = "csp-user-role">Select Role: </label>';
+		echo '<select name="csp-user-role">';
+		// echo '<option value="Select Role">Select Role</option>';
+		foreach ($roles as $role_key => $role) {
+			$selected = selected(get_option('csp-user-role'), $role_key, false);
+			echo '<option value="' . esc_attr($role_key) . '" ' . $selected . '>' . esc_html($role['name']) . '</option>';
+		}
+		echo '</select>';
+		submit_button();
+		echo '</form>';
+		if (isset($_POST['submit'])) {
+			$selected_role = sanitize_text_field($_POST['csp-user-role']);
+			update_option('csp-user-role', $selected_role);
+		}
+
+		// echo get_option('csp-user-role');
+	}
+
+	// public function my_plugin_save_settings()
+	// {
+	// 	if (isset($_POST['submit'])) {
+	// 		$selected_role = sanitize_text_field($_POST['csp-user-role']);
+	// 		update_option('csp-user-role', $selected_role);
+	// 	}
+	// }
 
 	/**
 	 * Fetch active guest rules from the database.
@@ -145,6 +178,9 @@ class Csp_Guest_Addon_Admin
 
 	public function fetch_active_guest_rules()
 	{
+		$role = get_option('csp-user-role');
+		if (!$role)
+			$role = 'administrator';
 		global $wpdb;
 		// $table_name = $wpdb->prefix . "wusp_subrules";
 		// $results = $wpdb->get_results(
@@ -154,10 +190,12 @@ class Csp_Guest_Addon_Admin
 
 		$table_name = $wpdb->prefix . "wusp_role_pricing_mapping";
 		$results = $wpdb->get_results(
-			$wpdb->prepare("SELECT product_id, price, flat_or_discount_price, min_qty FROM {$table_name} WHERE role = 'guest'")
+			$wpdb->prepare("SELECT product_id, price, flat_or_discount_price, min_qty FROM {$table_name} WHERE role = %s", $role)
 		);
 		$output = highlight_string(print_r($results, true), true);
-		// echo $output;
+		echo "<strong>" . $role . "</strong>";
+		echo "<br><br>";
+		echo $output;
 		// echo "<br><br>";
 		return $results;
 	}
@@ -367,7 +405,9 @@ class Csp_Guest_Addon_Admin
 
 			foreach ($product_data as $data) {
 				if (!($data['min_qty'] == 1)) {
+					// echo $data['min_qty'];
 					$table .= '<tr><td class = "qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($data['product_id'], $data['min_qty'])) . '</td></tr>';
+					// echo $this->calculate_price_qty($data['product_id'], $data['min_qty']);
 				}
 			}
 
