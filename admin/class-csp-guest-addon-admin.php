@@ -127,48 +127,38 @@ class Csp_Guest_Addon_Admin
 			50
 		);
 
-		add_submenu_page(
-			'guest-addon-menu',
-			'Get Price Data',
-			'Calculate Prices',
-			'manage_options',
-			'csp-guest-prices',
-			array($this, 'fetch_active_guest_rules'),
-		);
+		// add_submenu_page(
+		// 	'guest-addon-menu',
+		// 	'Get Price Data',
+		// 	'Calculate Prices',
+		// 	'manage_options',
+		// 	'csp-guest-prices',
+		// 	array($this, 'fetch_active_guest_rules'),
+		// );
 	}
 
 	public function guest_settings()
 	{
-
 		echo '<center><h1>' . get_admin_page_title() . '</h1></center>';
 		$roles = wp_roles()->roles;
 
+		echo "<div><h3>Choose Role to be considered as guest role.</h3></div>";
 		echo '<form method="post">';
-		echo '<label for = "csp-user-role">Select Role: </label>';
+		echo '<label for="csp-user-role">Select Role: </label>';
 		echo '<select name="csp-user-role">';
-		// echo '<option value="Select Role">Select Role</option>';
 		foreach ($roles as $role_key => $role) {
 			$selected = selected(get_option('csp-user-role'), $role_key, false);
-			echo '<option value="' . esc_attr($role_key) . '" ' . $selected . '>' . esc_html($role['name']) . '</option>';
+			echo '<option value="' . esc_attr($role_key) . '"' . $selected . '>' . esc_html($role['name']) . '</option>';
 		}
 		echo '</select>';
+
 		submit_button();
 		echo '</form>';
 		if (isset($_POST['submit'])) {
 			$selected_role = sanitize_text_field($_POST['csp-user-role']);
 			update_option('csp-user-role', $selected_role);
 		}
-
-		// echo get_option('csp-user-role');
 	}
-
-	// public function my_plugin_save_settings()
-	// {
-	// 	if (isset($_POST['submit'])) {
-	// 		$selected_role = sanitize_text_field($_POST['csp-user-role']);
-	// 		update_option('csp-user-role', $selected_role);
-	// 	}
-	// }
 
 	/**
 	 * Fetch active guest rules from the database.
@@ -193,9 +183,9 @@ class Csp_Guest_Addon_Admin
 			$wpdb->prepare("SELECT product_id, price, flat_or_discount_price, min_qty FROM {$table_name} WHERE role = %s", $role)
 		);
 		$output = highlight_string(print_r($results, true), true);
-		echo "<strong>" . $role . "</strong>";
-		echo "<br><br>";
-		echo $output;
+		// echo "<strong>" . $role . "</strong>";
+		// echo "<br><br>";
+		// echo $output;
 		// echo "<br><br>";
 		return $results;
 	}
