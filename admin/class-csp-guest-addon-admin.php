@@ -146,9 +146,15 @@ class Csp_Guest_Addon_Admin
 	public function fetch_active_guest_rules()
 	{
 		global $wpdb;
-		$table_name = $wpdb->prefix . "wusp_subrules";
+		// $table_name = $wpdb->prefix . "wusp_subrules";
+		// $results = $wpdb->get_results(
+		// 	$wpdb->prepare("SELECT product_id, price, flat_or_discount_price, min_qty FROM {$table_name} WHERE rule_type = 'Role' and associated_entity = 'guest' and active = 1")
+		// );
+
+
+		$table_name = $wpdb->prefix . "wusp_role_pricing_mapping";
 		$results = $wpdb->get_results(
-			$wpdb->prepare("SELECT product_id, price, flat_or_discount_price, min_qty FROM {$table_name} WHERE rule_type = 'Role' and associated_entity = 'guest' and active = 1")
+			$wpdb->prepare("SELECT product_id, price, flat_or_discount_price, min_qty FROM {$table_name} WHERE role = 'guest'")
 		);
 		$output = highlight_string(print_r($results, true), true);
 		// echo $output;
@@ -214,21 +220,49 @@ class Csp_Guest_Addon_Admin
 	public function set_guest_prices($price_html, $product)
 	{
 		if (!is_user_logged_in()) {
-
+			// echo "Hello";
 
 			$price_data = $this->get_price_data();
 			$product_id = $product->get_id();
-			$key = array_search($product_id, array_column($price_data, 'product_id'));
-			if ($key !== false) {
-				$price = $price_data[$key]['price'];
-				$min_qty = $price_data[$key]['min_qty'];
-				// if (is_product() && $product->is_type('simple')) {
-				// 	$product_html = $this->get_product_qty_html($product_id, $price, $min_qty);
-				// 	// echo $product_html;
-				$price_html = '<span class="price">' . wc_price($price)  . '</span>';
-				// return $price_html;
-				// }
-				// $price_html = '<span class="price">' . wc_price($price)  . '</span>';
+
+			if ($product->is_type('simple')) {
+				$key = array_search($product_id, array_column($price_data, 'product_id'));
+				if ($key !== false) {
+					// echo "Hello";
+					$price = $price_data[$key]['price'];
+					$min_qty = $price_data[$key]['min_qty'];
+					// if ($product->is_type('simple')) {
+					// 	$product_html = $this->get_product_qty_html($product_id, $price, $min_qty);
+					// 	// echo $product_html;
+					$price_html = '<span class="price">' . wc_price($price)  . '</span>';
+					return $price_html;
+					// } elseif ($product->is_type('variable')) {
+					// 	// echo "Hello";
+					// 	$price_html = '<span class="price">' . wc_price($price) . '-' . wc_price($price) . '</span>';
+					// 	return $price_html;
+					// }
+					$price_html = '<span class="price">' . wc_price($price)  . '</span>';
+					return $price_html;
+				}
+			} elseif ($product && $product->is_type('variable')) {
+				// $price_data = $this->get_price_data();
+				// $variation_ids = array();
+				$variations = $product->get_available_variations();
+				foreach ($variations as $variation) {
+					// return $variation['variation_id'];
+					$key = array_search($variation['variation_id'], array_column($price_data, 'product_id'));
+
+					if ($key !== false) {
+						$price = $price_data[$key]['price'];
+						// return 100;
+						// $min_qty = $price_data[$key]['min_qty'];
+
+						return wc_price($price) . '-' . wc_price($price);
+						// Use the price and min qty as needed
+						// ...
+					}
+				}
+				return $price_html;
 			}
 
 			return $price_html;
