@@ -248,6 +248,7 @@ class Csp_Guest_Addon_Admin
 	public function set_guest_prices($price_html, $product)
 	{
 		if (!is_user_logged_in()) {
+			// die($price_html);
 			// echo "Hello";
 
 			$price_data = $this->get_price_data();
@@ -305,8 +306,9 @@ class Csp_Guest_Addon_Admin
 	 * @return string The updated price HTML.
 	 */
 
-	public function qty_price_frontend($description)
+	public function qty_price_frontend()
 	{
+		// die("This is front end price.");
 		global $product;
 
 		if ($product && $product->is_type('simple')) {
@@ -319,11 +321,47 @@ class Csp_Guest_Addon_Admin
 			$price_html .= '<div class = "dynamic-price-text"><span>Product Total: <span>';
 			$price_html .= '<span>' . get_woocommerce_currency_symbol() . '<span>';
 			$price_html .= '<span class = "dynamic-price">' . $price .  '</span>';
+			$price_suffix = $product->get_price_suffix();
+			$price_html .= isset($price_suffix) ? '<span>' . $price_suffix . '</span>' : '';
 			$price_html .= '</div>';
-			return $price_html .= '<p>' . $description . '</p>';
-		}
+			// return $price_html .= '<p>' . $description . '</p>';
+			echo $price_html;
+		} elseif ($product && $product->is_type('variable')) {
 
-		return $description;
+			$product_id = $product->get_id();
+			if (isset($_POST['variation_id'])) {
+				$variation_id = $_POST['variation_id'];
+
+				// Output the variation ID
+				// echo 'Variation ID: ' . $variation_id;
+			}
+			$variation_ids = $product->get_children(); // Get an array of variation IDs
+
+			// Output the variation IDs
+			foreach ($variation_ids as $variation_id) {
+				// echo 'Variation ID: ' . $variation_id . '<br>';
+			}
+			// $variation_id = $product->get_variation_id();
+			// echo $variation_id;
+			// echo $product_id;
+			$price = $this->calculate_price_qty($product_id, 1);
+			// $price = number_format($price, 2);
+			$price_html = "<br>";
+			$price_html .= '<div><span>Product Total: <span>';
+			$price_html .= '<span>' . get_woocommerce_currency_symbol() . '<span>';
+			$price_html .= '<span class = "dynamic-price">' . $price .  '</span>';
+			$price_suffix = $product->get_price_suffix();
+			$price_html .= isset($price_suffix) ? '<span>' . $price_suffix . '</span>' : '';
+			$price_html .= '</div>';
+			// $price_html .= '<p>' . $description . '</p>';
+			// echo $price_html;
+			// die("Hello");
+			// return $price . $price_html;
+			echo $price_html;
+		}
+		// return $price;
+
+		// return $price;
 	}
 
 	/**
@@ -335,8 +373,9 @@ class Csp_Guest_Addon_Admin
 	 * @return string The HTML table containing quantity and price data.
 	 */
 
-	public function get_product_qty_html($description)
+	public function get_product_qty_html()
 	{
+		// die("Table should be printed");
 		// $price_data = $this->fetch_active_guest_rules();
 		global $product;
 
@@ -386,48 +425,191 @@ class Csp_Guest_Addon_Admin
 				return $a['min_qty'] <=> $b['min_qty'];
 			});
 
-			if (count($product_data) == 1 && end($product_data)['min_qty'] == 1) {
-				return $description;
+			if (!empty($product_data)) {
+				$last = end($product_data);
+			} else {
 			}
-			$table = '<div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
-			$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
-			$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($regular_price) . '</td></tr>';
+			// var_dump($last);
+			if (!empty($last) && $last['min_qty'] != 1) {
+				// return;
+				$price_suffix = $product->get_price_suffix();
+				$table = '<div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
+				$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
+				$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($regular_price);
+				$table .= isset($price_suffix) ? ' ' . $price_suffix : '';
+				$table .= '</td></tr>';
 
-			foreach ($product_data as $data) {
-				if (!($data['min_qty'] == 1)) {
-					// echo $data['min_qty'];
-					$table .= '<tr><td class = "qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($data['product_id'], $data['min_qty'])) . '</td></tr>';
-					// echo $this->calculate_price_qty($data['product_id'], $data['min_qty']);
+				foreach ($product_data as $data) {
+					if (!($data['min_qty'] == 1)) {
+						// echo $data['min_qty'];
+						$table .= '<tr><td class = "qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($data['product_id'], $data['min_qty']));
+						$table .= isset($price_suffix) ? ' ' . $price_suffix : '';
+						$table .= '</td></tr>';
+						// echo $this->calculate_price_qty($data['product_id'], $data['min_qty']);
+					}
 				}
+
+
+				$table .= '</table></div></div>';
+				// return $table .= "<p>" . $description . "</p>";
+				echo $table;
+				// return $price . $table;
+				// }
+				// return $price;
 			}
+		} elseif ($product && $product->is_type('variable')) {
+			$price_data = $this->get_price_data();
+			// $cat_price_data = $this->get_category_price_data();
+			$product_id = $product->get_id();
+			$variations = $product->get_available_variations();
+			$variation_data = array();
 
+			foreach ($variations as $variation) {
+				$variation_id = $variation['variation_id'];
+				// Match the variation ID with product ID in $price_data array
+				foreach ($price_data as $data) {
+					if ($data['product_id'] == $variation_id) {
+						$variation_price = $data['price'];
+						$variation_min_qty = $data['min_qty'];
+						// Use the variation price and min qty as needed
+						// ...
 
-			$table .= '</table></div></div>';
-			return $table .= "<p>" . $description . "</p>";
-			// }
-			return $description;
-		} else {
-			return $description;
+						$variation_data[] = array(
+							'variation_id' => $variation_id,
+							'price' => $variation_price,
+							'min_qty' => $variation_min_qty,
+						);
+						usort($variation_data, function ($a, $b) {
+							return $a['min_qty'] <=> $b['min_qty'];
+						});
+
+						if (!empty($variation_data)) {
+							$last = end($variation_data);
+						}
+						if (!empty($last) && $last['min_qty'] != 1) {
+							// if (count($variation_data) > 0) {
+							// 	foreach ($variation_data as $key => $data) {
+							// 		if ($data['min_qty'] === 1) {
+							// 			unset($variation_data[$key]);
+							// 			// continue;
+							// 		}
+							// 	}
+							// } else {
+							// The array does not have exactly one record
+							// echo "The array contains more than one record.";
+							$price_suffix = $product->get_price_suffix();
+							$table = '<div class = "dynamic-table"><div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
+							$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
+							$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_data[0]['variation_id'], 1));
+							$table .= isset($price_suffix) ? ' ' . $price_suffix : '';
+							$table .= '</td></tr>';
+
+							foreach ($variation_data as $data) {
+								if ($data['min_qty'] != 1) {
+									$table .= '<tr>';
+									$table .= '<td class="qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td>';
+									$table .= '<td class="qty-price">' . wc_price($data['price']);
+									$table .= isset($price_suffix) ? ' ' . $price_suffix : '';
+									$table .= '</td></tr>';
+								} // else
+								// 		continue;
+							}
+
+							$table .= '</table>';
+							$table .= '</div>';
+							$table .= '</div>';
+							$table .= '</div>';
+
+							echo $table;
+							// return $price . $table;
+						}
+					}
+				}
+				// foreach ($cat_price_data as $data) {
+				// 	if ($data['product_id'] == $variation_id) {
+				// 		$variation_price = $data['price'];
+				// 		$variation_min_qty = $data['min_qty'];
+				// 		// Use the variation price and min qty as needed
+				// 		// ...
+
+				// 		$variation_data[] = array(
+				// 			'variation_id' => $variation_id,
+				// 			'price' => $variation_price,
+				// 			'min_qty' => $variation_min_qty,
+				// 		);
+				// 		usort($variation_data, function ($a, $b) {
+				// 			return $a['min_qty'] <=> $b['min_qty'];
+				// 		});
+
+				// 		if (end($variation_data)['min_qty'] == 1) {
+				// 			return $table = '<div class = "dynamic-table"></div>';
+				// 		}
+				// 		// if (count($variation_data) > 0) {
+				// 		// 	foreach ($variation_data as $key => $data) {
+				// 		// 		if ($data['min_qty'] === 1) {
+				// 		// 			unset($variation_data[$key]);
+				// 		// 			// continue;
+				// 		// 		}
+				// 		// 	}
+				// 		// } else {
+				// 		// The array does not have exactly one record
+				// 		// echo "The array contains more than one record.";
+
+				// 		$table = '<div class = "dynamic-table"><div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
+				// 		$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
+				// 		$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_data[0]['variation_id'], 1)) . '</td></tr>';
+
+				// 		foreach ($variation_data as $data) {
+				// 			if ($data['min_qty'] != 1) {
+				// 				$table .= '<tr>';
+				// 				$table .= '<td class="qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td>';
+				// 				$table .= '<td class="qty-price">' . wc_price($data['price']) . '</td>';
+				// 				$table .= '</tr>';
+				// 			} // else
+				// 			// 		continue;
+				// 		}
+
+				// 		$table .= '</table>';
+				// 		$table .= '</div>';
+				// 		$table .= '</div>';
+				// 		$table .= '</div>';
+
+				// 		echo $table;
+				// 		return;
+				// 	}
+				// }
+			}
+			// return $price;
 		}
+		// return $price;
 	}
 
-	public function custom_product_description($description)
-	{
-		global $product;
+	// public function check_condition_and_remove_action()
+	// {
+	// 	$product_data = get_product_data(); // Assuming you have a way to retrieve the product data
 
-		// Get the product ID
-		$product_id = $product->get_id();
+	// 	if (end($product_data)['min_qty'] == 1 || end($variation_data)['min_qty'] == 1) {
+	// 		remove_action('woocommerce_before_add_to_cart_form', array($this, 'get_product_qty_html'));
+	// 	}
+	// }
 
-		// Get the regular price
-		$regular_price = $product->get_regular_price();
+	// public function custom_product_description($description)
+	// {
+	// 	global $product;
 
-		// Modify the product description based on the product ID and regular price
-		$modified_description = '<p><strong>Product ID:</strong> ' . $product_id . '</p>';
-		$modified_description .= '<p><strong>Regular Price:</strong> ' . $regular_price . '</p>';
-		$modified_description .= '<p>' . $description . '</p>';
+	// 	// Get the product ID
+	// 	$product_id = $product->get_id();
 
-		return $modified_description;
-	}
+	// 	// Get the regular price
+	// 	$regular_price = $product->get_regular_price();
+
+	// 	// Modify the product description based on the product ID and regular price
+	// 	$modified_description = '<p><strong>Product ID:</strong> ' . $product_id . '</p>';
+	// 	$modified_description .= '<p><strong>Regular Price:</strong> ' . $regular_price . '</p>';
+	// 	$modified_description .= '<p>' . $description . '</p>';
+
+	// 	return $modified_description;
+	// }
 
 	/**
 	 * Calculate dynamic prices for cart items.
@@ -575,35 +757,35 @@ class Csp_Guest_Addon_Admin
 	 * @return float The price for the mini cart display.
 	 */
 
-	public function price_mini_cart($product_id, $product_quantity)
-	{
-		$price_data = $this->get_price_data();
-		$product_data = array();
-		foreach ($price_data as $rec) {
-			if ($rec['product_id'] == $product_id) {
-				$product_data[] = $rec;
-			}
-		}
+	// public function price_mini_cart($product_id, $product_quantity)
+	// {
+	// 	$price_data = $this->get_price_data();
+	// 	$product_data = array();
+	// 	foreach ($price_data as $rec) {
+	// 		if ($rec['product_id'] == $product_id) {
+	// 			$product_data[] = $rec;
+	// 		}
+	// 	}
 
-		$output = highlight_string(print_r($product_data, true), true);
-		// echo $output;
+	// 	$output = highlight_string(print_r($product_data, true), true);
+	// 	// echo $output;
 
-		usort($product_data, function ($a, $b) {
-			return $b['min_qty'] <=> $a['min_qty'];
-		});
+	// 	usort($product_data, function ($a, $b) {
+	// 		return $b['min_qty'] <=> $a['min_qty'];
+	// 	});
 
-		$output = highlight_string(print_r($product_data, true), true);
-		// echo $output;
-		$calc_price = $product_data[-1]['price'];
-		foreach ($product_data as $rec) {
-			if ($product_quantity >= $rec['min_qty']) {
-				$calc_price = $rec['price'];
-				break;
-			}
-		}
-		// echo $calc_price;
-		return $calc_price;
-	}
+	// 	$output = highlight_string(print_r($product_data, true), true);
+	// 	// echo $output;
+	// 	$calc_price = $product_data[-1]['price'];
+	// 	foreach ($product_data as $rec) {
+	// 		if ($product_quantity >= $rec['min_qty']) {
+	// 			$calc_price = $rec['price'];
+	// 			break;
+	// 		}
+	// 	}
+	// 	// echo $calc_price;
+	// 	return $calc_price;
+	// }
 
 	/**
 	 * Update the display of the mini cart item.
@@ -614,27 +796,27 @@ class Csp_Guest_Addon_Admin
 	 * @return string The updated display of the mini cart item.
 	 */
 
-	public function update_mini_cart_display($product_quantity, $cart_item, $cart_item_key)
-	{
-		$product_price = 10;
-		$formatted_price = wc_price($product_price);
+	// public function update_mini_cart_display($product_quantity, $cart_item, $cart_item_key)
+	// {
+	// 	$product_price = 10;
+	// 	$formatted_price = wc_price($product_price);
 
-		return $product_quantity . ' X ' . $formatted_price;
+	// 	return $product_quantity . ' X ' . $formatted_price;
 
-		// return $formatted_price;
+	// 	// return $formatted_price;
 
-		// return $product_name . '<br><span class="mini-cart-quantity">' . $quantity = 10 . ' X ' . $price = 10 . '</span>';
-		// return $product_name . '<br><span class="mini-cart-quantity">10X10</span>';
-	}
+	// 	// return $product_name . '<br><span class="mini-cart-quantity">' . $quantity = 10 . ' X ' . $price = 10 . '</span>';
+	// 	// return $product_name . '<br><span class="mini-cart-quantity">10X10</span>';
+	// }
 
-	public function custom_variation_price_html($price, $variation, $product)
-	{
-		// Modify the variation price as needed
-		echo gettype($price);
-		$modified_price = wp_price(19); // Replace with your desired modified price format
+	// public function custom_variation_price_html($price, $variation, $product)
+	// {
+	// 	// Modify the variation price as needed
+	// 	echo gettype($price);
+	// 	$modified_price = wp_price(19); // Replace with your desired modified price format
 
-		return $modified_price;
-	}
+	// 	return $modified_price;
+	// }
 
 	// public function get_var_price_data()
 	// {
@@ -658,278 +840,284 @@ class Csp_Guest_Addon_Admin
 	// 	}
 	// }
 
-	public function set_var_prices($price_html, $product)
-	{
+	// public function set_var_prices($price_html, $product)
+	// {
 
-		if ($product && $product->is_type('variable')) {
-			$price_data = $this->get_price_data();
-			// $variation_ids = array();
-			$variations = $product->get_available_variations();
-			foreach ($variations as $variation) {
-				// return $variation['variation_id'];
-				$key = array_search($variation['variation_id'], array_column($price_data, 'product_id'));
+	// 	if ($product && $product->is_type('variable')) {
+	// 		$price_data = $this->get_price_data();
+	// 		// $variation_ids = array();
+	// 		$variations = $product->get_available_variations();
+	// 		foreach ($variations as $variation) {
+	// 			// return $variation['variation_id'];
+	// 			$key = array_search($variation['variation_id'], array_column($price_data, 'product_id'));
 
-				if ($key !== false) {
-					$price = $price_data[$key]['price'];
-					// return 100;
-					// $min_qty = $price_data[$key]['min_qty'];
+	// 			if ($key !== false) {
+	// 				$price = $price_data[$key]['price'];
+	// 				// return 100;
+	// 				// $min_qty = $price_data[$key]['min_qty'];
 
-					return wc_price($price) . '-' . wc_price($price);
-					// Use the price and min qty as needed
-					// ...
-				}
-			}
-			return $price_html;
-		}
-		return $price_html;
-	}
+	// 				return wc_price($price) . '-' . wc_price($price);
+	// 				// Use the price and min qty as needed
+	// 				// ...
+	// 			}
+	// 		}
+	// 		return $price_html;
+	// 	}
+	// 	return $price_html;
+	// }
 	// public $global_variation_id;
-	public function get_var_product_qty_html()
-	{
-		global $product;
+	// public function get_var_product_qty_html($price, $product)
+	// {
+	// 	// global $product;
 
-		if ($product && $product->is_type('variable')) {
-			$price_data = $this->get_price_data();
-			// $cat_price_data = $this->get_category_price_data();
-			$product_id = $product->get_id();
-			$variations = $product->get_available_variations();
-			$variation_data = array();
+	// 	if ($product && $product->is_type('variable') && is_product()) {
+	// 		$price_data = $this->get_price_data();
+	// 		// $cat_price_data = $this->get_category_price_data();
+	// 		$product_id = $product->get_id();
+	// 		$variations = $product->get_available_variations();
+	// 		$variation_data = array();
 
-			foreach ($variations as $variation) {
-				$variation_id = $variation['variation_id'];
-				// Match the variation ID with product ID in $price_data array
-				foreach ($price_data as $data) {
-					if ($data['product_id'] == $variation_id) {
-						$variation_price = $data['price'];
-						$variation_min_qty = $data['min_qty'];
-						// Use the variation price and min qty as needed
-						// ...
+	// 		foreach ($variations as $variation) {
+	// 			$variation_id = $variation['variation_id'];
+	// 			// Match the variation ID with product ID in $price_data array
+	// 			foreach ($price_data as $data) {
+	// 				if ($data['product_id'] == $variation_id) {
+	// 					$variation_price = $data['price'];
+	// 					$variation_min_qty = $data['min_qty'];
+	// 					// Use the variation price and min qty as needed
+	// 					// ...
 
-						$variation_data[] = array(
-							'variation_id' => $variation_id,
-							'price' => $variation_price,
-							'min_qty' => $variation_min_qty,
-						);
-						usort($variation_data, function ($a, $b) {
-							return $a['min_qty'] <=> $b['min_qty'];
-						});
+	// 					$variation_data[] = array(
+	// 						'variation_id' => $variation_id,
+	// 						'price' => $variation_price,
+	// 						'min_qty' => $variation_min_qty,
+	// 					);
+	// 					usort($variation_data, function ($a, $b) {
+	// 						return $a['min_qty'] <=> $b['min_qty'];
+	// 					});
 
-						if (end($variation_data)['min_qty'] == 1) {
-							return $table = '<div class = "dynamic-table"></div>';
-						}
-						// if (count($variation_data) > 0) {
-						// 	foreach ($variation_data as $key => $data) {
-						// 		if ($data['min_qty'] === 1) {
-						// 			unset($variation_data[$key]);
-						// 			// continue;
-						// 		}
-						// 	}
-						// } else {
-						// The array does not have exactly one record
-						// echo "The array contains more than one record.";
+	// 					if (end($variation_data)['min_qty'] == 1) {
+	// 						return $price . $table = '<div class = "dynamic-table"></div>';
+	// 					}
+	// 					// if (count($variation_data) > 0) {
+	// 					// 	foreach ($variation_data as $key => $data) {
+	// 					// 		if ($data['min_qty'] === 1) {
+	// 					// 			unset($variation_data[$key]);
+	// 					// 			// continue;
+	// 					// 		}
+	// 					// 	}
+	// 					// } else {
+	// 					// The array does not have exactly one record
+	// 					// echo "The array contains more than one record.";
 
-						$table = '<div class = "dynamic-table"><div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
-						$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
-						$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_data[0]['variation_id'], 1)) . '</td></tr>';
+	// 					$table = '<div class = "dynamic-table"><div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
+	// 					$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
+	// 					$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_data[0]['variation_id'], 1)) . '</td></tr>';
 
-						foreach ($variation_data as $data) {
-							if ($data['min_qty'] != 1) {
-								$table .= '<tr>';
-								$table .= '<td class="qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td>';
-								$table .= '<td class="qty-price">' . wc_price($data['price']) . '</td>';
-								$table .= '</tr>';
-							} // else
-							// 		continue;
-						}
+	// 					foreach ($variation_data as $data) {
+	// 						if ($data['min_qty'] != 1) {
+	// 							$table .= '<tr>';
+	// 							$table .= '<td class="qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td>';
+	// 							$table .= '<td class="qty-price">' . wc_price($data['price']) . '</td>';
+	// 							$table .= '</tr>';
+	// 						} // else
+	// 						// 		continue;
+	// 					}
 
-						$table .= '</table>';
-						$table .= '</div>';
-						$table .= '</div>';
-						$table .= '</div>';
+	// 					$table .= '</table>';
+	// 					$table .= '</div>';
+	// 					$table .= '</div>';
+	// 					$table .= '</div>';
 
-						echo $table;
-						return;
-					}
-				}
-				// foreach ($cat_price_data as $data) {
-				// 	if ($data['product_id'] == $variation_id) {
-				// 		$variation_price = $data['price'];
-				// 		$variation_min_qty = $data['min_qty'];
-				// 		// Use the variation price and min qty as needed
-				// 		// ...
+	// 					// echo $table;
+	// 					return $price . $table;
+	// 				}
+	// 			}
+	// 			// foreach ($cat_price_data as $data) {
+	// 			// 	if ($data['product_id'] == $variation_id) {
+	// 			// 		$variation_price = $data['price'];
+	// 			// 		$variation_min_qty = $data['min_qty'];
+	// 			// 		// Use the variation price and min qty as needed
+	// 			// 		// ...
 
-				// 		$variation_data[] = array(
-				// 			'variation_id' => $variation_id,
-				// 			'price' => $variation_price,
-				// 			'min_qty' => $variation_min_qty,
-				// 		);
-				// 		usort($variation_data, function ($a, $b) {
-				// 			return $a['min_qty'] <=> $b['min_qty'];
-				// 		});
+	// 			// 		$variation_data[] = array(
+	// 			// 			'variation_id' => $variation_id,
+	// 			// 			'price' => $variation_price,
+	// 			// 			'min_qty' => $variation_min_qty,
+	// 			// 		);
+	// 			// 		usort($variation_data, function ($a, $b) {
+	// 			// 			return $a['min_qty'] <=> $b['min_qty'];
+	// 			// 		});
 
-				// 		if (end($variation_data)['min_qty'] == 1) {
-				// 			return $table = '<div class = "dynamic-table"></div>';
-				// 		}
-				// 		// if (count($variation_data) > 0) {
-				// 		// 	foreach ($variation_data as $key => $data) {
-				// 		// 		if ($data['min_qty'] === 1) {
-				// 		// 			unset($variation_data[$key]);
-				// 		// 			// continue;
-				// 		// 		}
-				// 		// 	}
-				// 		// } else {
-				// 		// The array does not have exactly one record
-				// 		// echo "The array contains more than one record.";
+	// 			// 		if (end($variation_data)['min_qty'] == 1) {
+	// 			// 			return $table = '<div class = "dynamic-table"></div>';
+	// 			// 		}
+	// 			// 		// if (count($variation_data) > 0) {
+	// 			// 		// 	foreach ($variation_data as $key => $data) {
+	// 			// 		// 		if ($data['min_qty'] === 1) {
+	// 			// 		// 			unset($variation_data[$key]);
+	// 			// 		// 			// continue;
+	// 			// 		// 		}
+	// 			// 		// 	}
+	// 			// 		// } else {
+	// 			// 		// The array does not have exactly one record
+	// 			// 		// echo "The array contains more than one record.";
 
-				// 		$table = '<div class = "dynamic-table"><div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
-				// 		$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
-				// 		$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_data[0]['variation_id'], 1)) . '</td></tr>';
+	// 			// 		$table = '<div class = "dynamic-table"><div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
+	// 			// 		$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
+	// 			// 		$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_data[0]['variation_id'], 1)) . '</td></tr>';
 
-				// 		foreach ($variation_data as $data) {
-				// 			if ($data['min_qty'] != 1) {
-				// 				$table .= '<tr>';
-				// 				$table .= '<td class="qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td>';
-				// 				$table .= '<td class="qty-price">' . wc_price($data['price']) . '</td>';
-				// 				$table .= '</tr>';
-				// 			} // else
-				// 			// 		continue;
-				// 		}
+	// 			// 		foreach ($variation_data as $data) {
+	// 			// 			if ($data['min_qty'] != 1) {
+	// 			// 				$table .= '<tr>';
+	// 			// 				$table .= '<td class="qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td>';
+	// 			// 				$table .= '<td class="qty-price">' . wc_price($data['price']) . '</td>';
+	// 			// 				$table .= '</tr>';
+	// 			// 			} // else
+	// 			// 			// 		continue;
+	// 			// 		}
 
-				// 		$table .= '</table>';
-				// 		$table .= '</div>';
-				// 		$table .= '</div>';
-				// 		$table .= '</div>';
+	// 			// 		$table .= '</table>';
+	// 			// 		$table .= '</div>';
+	// 			// 		$table .= '</div>';
+	// 			// 		$table .= '</div>';
 
-				// 		echo $table;
-				// 		return;
-				// 	}
-				// }
-			}
-		}
-	}
+	// 			// 		echo $table;
+	// 			// 		return;
+	// 			// 	}
+	// 			// }
+	// 		}
+	// 		return $price;
+	// 	}
+	// 	return $price;
+	// }
 
-	public function get_var_product_qty_dynamic_html($variation_id)
-	{
+	// public function get_var_product_qty_dynamic_html($variation_id)
+	// {
 
-		$variation_product = wc_get_product($variation_id);
-		if ($variation_product) {
-			// return "Hello";
-			$parent_product_id = $variation_product->get_parent_id();
-			// return $parent_product_id;
-			// return $parent_product_id;
-			$parent_product = wc_get_product($parent_product_id);
-			// return $parent_product
-		}
-		if ($parent_product && $parent_product->is_type('variable')) {
+	// 	$variation_product = wc_get_product($variation_id);
+	// 	if ($variation_product) {
+	// 		// return "Hello";
+	// 		$parent_product_id = $variation_product->get_parent_id();
+	// 		// return $parent_product_id;
+	// 		// return $parent_product_id;
+	// 		$parent_product = wc_get_product($parent_product_id);
+	// 		// return $parent_product
+	// 	}
+	// 	if ($parent_product && $parent_product->is_type('variable')) {
 
-			// $price_data = $this->get_price_data();
-			$price_data = $this->get_price_data();
-			$product_data = array();
-			foreach ($price_data as $rec) {
-				if ($rec['product_id'] == $variation_id) {
-					$product_data[] = $rec;
-				}
-			}
-			$output = highlight_string(print_r($product_data, true), true);
-			// echo $output;
+	// 		// $price_data = $this->get_price_data();
+	// 		$price_data = $this->get_price_data();
+	// 		$product_data = array();
+	// 		foreach ($price_data as $rec) {
+	// 			if ($rec['product_id'] == $variation_id) {
+	// 				$product_data[] = $rec;
+	// 			}
+	// 		}
+	// 		$output = highlight_string(print_r($product_data, true), true);
+	// 		// echo $output;
 
-			// if (empty($product_data)) {
-			// foreach ($price_data as $rec) {
-			// 	foreach ($rec as $r) {
-			// 		if ($r['product_id'] == $parent_product_id) {
-			// 			$product_data[] = $rec;
-			// 		}
-			// 	}
-			// }
-			// }
+	// 		// if (empty($product_data)) {
+	// 		// foreach ($price_data as $rec) {
+	// 		// 	foreach ($rec as $r) {
+	// 		// 		if ($r['product_id'] == $parent_product_id) {
+	// 		// 			$product_data[] = $rec;
+	// 		// 		}
+	// 		// 	}
+	// 		// }
+	// 		// }
 
-			usort($product_data, function ($a, $b) {
-				return $a['min_qty'] <=> $b['min_qty'];
-			});
-			if (end($product_data)['min_qty'] == 1) {
-				return $table = '<div class = "dynamic-table"></div>';
-			}
-			// var_dump($product_data);
-			// return;
-			// if($product_data[-1][min])
-			$table = '<div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
-			$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
-			$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_id, 1)) . '</td></tr>';
+	// 		usort($product_data, function ($a, $b) {
+	// 			return $a['min_qty'] <=> $b['min_qty'];
+	// 		});
+	// 		if (end($product_data)['min_qty'] == 1) {
+	// 			return $table = '<div class = "dynamic-table"></div>';
+	// 		}
+	// 		// var_dump($product_data);
+	// 		// return;
+	// 		// if($product_data[-1][min])
+	// 		$table = '<div class = "qty-fieldset"><h1 class="qty-legend"><span>' . __('Quantity Discount', 'customer-specific-pricing-for-woocommerce') . '</span></h1><div class="qty_table_container"><table class = "qty_table">';
+	// 		$moreText = __('and more :', 'customer-specific-pricing-for-woocommerce');
+	// 		$table .= '<tr><td class = "qty-num">1' . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($variation_id, 1)) . '</td></tr>';
 
-			foreach ($product_data as $data) {
-				if ($data['min_qty'] != 1) {
-					$table .= '<tr><td class = "qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($data['product_id'], $data['min_qty'])) . '</td></tr>';
-				}
-			}
+	// 		foreach ($product_data as $data) {
+	// 			if ($data['min_qty'] != 1) {
+	// 				$table .= '<tr><td class = "qty-num">' . $data['min_qty'] . ' ' . $moreText . '</td><td class = "qty-price">' . wc_price($this->calculate_price_qty($data['product_id'], $data['min_qty'])) . '</td></tr>';
+	// 			}
+	// 		}
 
 
-			$table .= '</table></div></div>';
-			return $table;
-			// return $table .= "<p>" . $description . "</p>";
-		}
-	}
+	// 		$table .= '</table></div></div>';
+	// 		return $table;
+	// 		// return $table .= "<p>" . $description . "</p>";
+	// 	}
+	// }
 
-	public function qty_var_price_frontend()
-	{
-		global $product;
-		// Get the product ID
-		if ($product && $product->is_type('variable') && !is_user_logged_in()) {
-			$product_id = $product->get_id();
-			if (isset($_POST['variation_id'])) {
-				$variation_id = $_POST['variation_id'];
+	// public function qty_var_price_frontend($price, $product)
+	// {
 
-				// Output the variation ID
-				// echo 'Variation ID: ' . $variation_id;
-			}
-			$variation_ids = $product->get_children(); // Get an array of variation IDs
+	// 	// global $product;
+	// 	// Get the product ID
+	// 	if ($product && $product->is_type('variable') && is_product()) {
 
-			// Output the variation IDs
-			foreach ($variation_ids as $variation_id) {
-				// echo 'Variation ID: ' . $variation_id . '<br>';
-			}
-			// $variation_id = $product->get_variation_id();
-			// echo $variation_id;
-			// echo $product_id;
-			$price = $this->calculate_price_qty($product_id, 1);
-			// $price = number_format($price, 2);
-			$price_html = "<br>";
-			$price_html .= '<div><span>Product Total: <span>';
-			$price_html .= '<span>' . get_woocommerce_currency_symbol() . '<span>';
-			$price_html .= '<span class = "dynamic-price">' . $price .  '</span>';
-			$price_html .= '</div>';
-			// $price_html .= '<p>' . $description . '</p>';
-			echo $price_html;
-		}
-		// return $description;
-		// echo $price_html;
-	}
+	// 		$product_id = $product->get_id();
+	// 		if (isset($_POST['variation_id'])) {
+	// 			$variation_id = $_POST['variation_id'];
 
-	public function get_current_variation_id()
-	{
-		global $product;
+	// 			// Output the variation ID
+	// 			// echo 'Variation ID: ' . $variation_id;
+	// 		}
+	// 		$variation_ids = $product->get_children(); // Get an array of variation IDs
 
-		if ($product && $product->is_type('variable')) {
-			// Variable product
+	// 		// Output the variation IDs
+	// 		foreach ($variation_ids as $variation_id) {
+	// 			// echo 'Variation ID: ' . $variation_id . '<br>';
+	// 		}
+	// 		// $variation_id = $product->get_variation_id();
+	// 		// echo $variation_id;
+	// 		// echo $product_id;
+	// 		$price = $this->calculate_price_qty($product_id, 1);
+	// 		// $price = number_format($price, 2);
+	// 		$price_html = "<br>";
+	// 		$price_html .= '<div><span>Product Total: <span>';
+	// 		$price_html .= '<span>' . get_woocommerce_currency_symbol() . '<span>';
+	// 		$price_html .= '<span class = "dynamic-price">' . $price .  '</span>';
+	// 		$price_html .= '</div>';
+	// 		// $price_html .= '<p>' . $description . '</p>';
+	// 		// echo $price_html;
+	// 		// die("Hello");
+	// 		return $price . $price_html;
+	// 	}
+	// 	return $price;
+	// 	// echo $price_html;
+	// }
 
-			$variation_id = $product->get_variation_id();
+	// public function get_current_variation_id()
+	// {
+	// 	global $product;
 
-			// Output the current variation ID
-			// echo 'Current Variation ID: ' . $variation_id;
-		}
-	}
+	// 	if ($product && $product->is_type('variable')) {
+	// 		// Variable product
 
-	function custom_mini_cart_fragment($fragments)
-	{
-		ob_start();
+	// 		$variation_id = $product->get_variation_id();
 
-		// Generate the updated mini cart HTML
-		// Replace this with your own logic to update the mini cart content
-		wc_get_template_part('cart/mini-cart');
+	// 		// Output the current variation ID
+	// 		// echo 'Current Variation ID: ' . $variation_id;
+	// 	}
+	// }
 
-		$fragments['div.mini-cart'] = ob_get_clean();
+	// function custom_mini_cart_fragment($fragments)
+	// {
+	// 	ob_start();
 
-		return $fragments;
-	}
+	// 	// Generate the updated mini cart HTML
+	// 	// Replace this with your own logic to update the mini cart content
+	// 	wc_get_template_part('cart/mini-cart');
+
+	// 	$fragments['div.mini-cart'] = ob_get_clean();
+
+	// 	return $fragments;
+	// }
 
 	/**
 	 * Callback function for filters.
@@ -942,15 +1130,18 @@ class Csp_Guest_Addon_Admin
 		if (!is_user_logged_in()) {
 			add_filter('woocommerce_get_price_html', array($this, 'set_guest_prices'), 10, 2);
 			// add_filter('woocommerce_get_price_html', array($this, 'set_var_prices'), 10, 2);
-			add_filter('woocommerce_short_description', array($this, 'qty_price_frontend'), 10, 1);
-			add_filter('woocommerce_short_description', array($this, 'get_product_qty_html'), 10, 1);
-			add_action('woocommerce_before_add_to_cart_button', array($this, 'qty_var_price_frontend'), 10, 1);
-			add_action('woocommerce_before_add_to_cart_button', array($this, 'get_var_product_qty_html'), 10);
+			add_filter('woocommerce_before_add_to_cart_form', array($this, 'qty_price_frontend'), 10);
+			add_filter('woocommerce_before_add_to_cart_form', array($this, 'get_product_qty_html'), 10);
+			// add_action('woocommerce_before_add_to_cart_button', array($this, 'check_condition_and_remove_action'));
+			// add_action('woocommerce_before_add_to_cart_button', array($this, 'qty_price_frontend'), 10);
+			// add_action('woocommerce_before_add_to_cart_button', array($this, 'get_product_qty_html'), 10);
+			// add_action('woocommerce_before_add_to_cart_form', array($this, 'qty_var_price_frontend'), 10);
+			// add_action('woocommerce_before_add_to_cart_form', array($this, 'get_var_product_qty_html'), 10);
 			// add_filter('woocommerce_get_price_html', array($this, 'set_cat_prices'), 9, 2);
 			// add_action('woocommerce_before_add_to_cart_button', array($this, 'qty_cat_price_frontend'), 10, 1);
 			// add_action('woocommerce_before_add_to_cart_button', array($this, 'get_cat_product_qty_html'), 10);
 			add_filter('woocommerce_sale_flash', '__return_false');
-			add_filter('woocommerce_add_to_cart_fragments', 'custom_mini_cart_fragment', 10, 1);
+			// add_filter('woocommerce_add_to_cart_fragments', 'custom_mini_cart_fragment', 10, 1);
 			// add_filter('woocommerce_before_single_variation', array($this, 'qty_var_price_frontend'), 10);
 			// add_filter('woocommerce_before_single_variation', array($this, 'get_var_product_qty_html'), 10);
 			// add_filter('woocommerce_variation_prices_price', array($this, 'custom_variation_price_html'), 10, 3);
