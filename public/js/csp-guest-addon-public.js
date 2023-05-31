@@ -1,17 +1,17 @@
 jQuery(document).ready(function ($) {
   // Function to update the price in the mini cart
-  function updateMiniCartPrice() {
-    var cartPrice = $(".product-price").text();
-    $(".mini-cart-price").text(cartPrice);
-  }
+  // function updateMiniCartPrice() {
+  //   var cartPrice = $(".product-price").text();
+  //   $(".mini-cart-price").text(cartPrice);
+  // }
 
-  // Update the price when the cart page loads
-  updateMiniCartPrice();
+  // // Update the price when the cart page loads
+  // updateMiniCartPrice();
 
-  // Update the price when the cart is updated dynamically (e.g., through AJAX)
-  $(document.body).on("updated_cart_totals", function () {
-    updateMiniCartPrice();
-  });
+  // // Update the price when the cart is updated dynamically (e.g., through AJAX)
+  // $(document.body).on("updated_cart_totals", function () {
+  //   updateMiniCartPrice();
+  // });
 
   // AJAX call
   // $(document).on("click", ".reset_variations", function () {
