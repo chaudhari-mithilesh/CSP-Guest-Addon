@@ -85,6 +85,7 @@ CSS for the product front end .qty-discount-li {
 }
 
 .qty-num {
+  /* display: flex; */
   text-align: right; /*padding-right: 0.3em;*/
   width: auto;
 }
@@ -111,4 +112,13 @@ CSS for the product front end .qty-discount-li {
 
 .qty_table_container::-webkit-scrollbar {
   display: none;
+}
+.qty_table tbody {
+  width: 50%;
+  display: flex !important;
+  flex-direction: column;
+}
+.qty_table tr {
+  display: flex;
+  justify-content: space-evenly;
 }
